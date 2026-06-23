@@ -1,20 +1,10 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-// @deno-types="npm:@types/web-push"
-import webpush from 'npm:web-push'
 
 const cors = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
-
-webpush.setVapidDetails(
-  Deno.env.get('VAPID_EMAIL')!,
-  Deno.env.get('VAPID_PUBLIC_KEY')!,
-  Deno.env.get('VAPID_PRIVATE_KEY')!,
-)
-
-// ---- FCM HTTP v1 (per l'app nativa Capacitor) -------------------------------
 
 function pemToArrayBuffer(pem: string): ArrayBuffer {
   const b64 = pem
@@ -34,7 +24,7 @@ function b64url(data: string | Uint8Array): string {
   return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
 }
 
-// Genera un access token OAuth2 a partire dal service account.
+// Service account → access token OAuth2 per FCM HTTP v1.
 async function getFcmAccessToken(sa: { client_email: string; private_key: string }): Promise<string> {
   const now = Math.floor(Date.now() / 1000)
   const header = b64url(JSON.stringify({ alg: 'RS256', typ: 'JWT' }))
@@ -72,12 +62,8 @@ async function getFcmAccessToken(sa: { client_email: string; private_key: string
   return json.access_token
 }
 
-async function sendFcm(token: string, title: string, body: string) {
-  const raw = Deno.env.get('FCM_SERVICE_ACCOUNT')
-  if (!raw) return // FCM non configurato: salta senza errori
-  const sa = JSON.parse(raw)
-  const accessToken = await getFcmAccessToken(sa)
-  await fetch(`https://fcm.googleapis.com/v1/projects/${sa.project_id}/messages:send`, {
+async function sendFcm(projectId: string, accessToken: string, token: string, title: string, body: string) {
+  const r = await fetch(`https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -91,12 +77,10 @@ async function sendFcm(token: string, title: string, body: string) {
         data: { url: '/chat' },
       },
     }),
-  }).then(async (r) => {
-    if (!r.ok) console.error('FCM send failed:', await r.text())
   })
+  if (!r.ok) console.error('FCM send failed:', await r.text())
+  else console.log('FCM sent ok')
 }
-
-// ---- Handler ----------------------------------------------------------------
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -122,12 +106,20 @@ Deno.serve(async (req) => {
 
   const { data: recipients } = await supabase
     .from('profiles')
-    .select('push_subscription, fcm_token')
+    .select('fcm_token')
     .neq('id', sender_id)
+    .not('fcm_token', 'is', null)
 
   if (!recipients?.length) {
-    return new Response('no recipients', { status: 200, headers: cors })
+    return new Response('no fcm recipients', { status: 200, headers: cors })
   }
+
+  const raw = Deno.env.get('FCM_SERVICE_ACCOUNT')
+  if (!raw) {
+    return new Response('FCM not configured', { status: 200, headers: cors })
+  }
+  const sa = JSON.parse(raw)
+  const accessToken = await getFcmAccessToken(sa)
 
   const title = message.profiles?.display_name ?? 'msg'
   const body = message.voice_url
@@ -136,18 +128,9 @@ Deno.serve(async (req) => {
     ? '📷 Foto'
     : (message.content ?? '')
 
-  const tasks: Promise<unknown>[] = []
-  for (const r of recipients) {
-    if (r.push_subscription) {
-      tasks.push(
-        webpush.sendNotification(r.push_subscription, JSON.stringify({ title, body })).catch(console.error),
-      )
-    }
-    if (r.fcm_token) {
-      tasks.push(sendFcm(r.fcm_token, title, body).catch(console.error))
-    }
-  }
-  await Promise.all(tasks)
+  await Promise.all(
+    recipients.map((r) => sendFcm(sa.project_id, accessToken, r.fcm_token, title, body).catch(console.error)),
+  )
 
   return new Response('ok', { status: 200, headers: cors })
 })
