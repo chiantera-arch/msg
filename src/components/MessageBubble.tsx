@@ -1,6 +1,6 @@
 'use client'
 import Image from 'next/image'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { Message } from '@/lib/types'
 
 interface Props {
@@ -14,14 +14,24 @@ export function MessageBubble({ message, isOwn, onDelete }: Props) {
   const [showDelete, setShowDelete] = useState(false)
   const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
 
-  const startPress = () => {
+  useEffect(() => {
+    if (!showDelete) return
+    const dismiss = () => setShowDelete(false)
+    document.addEventListener('pointerdown', dismiss)
+    return () => document.removeEventListener('pointerdown', dismiss)
+  }, [showDelete])
+
+  const startPress = (e: React.TouchEvent | React.MouseEvent) => {
     if (!isOwn || message.deleted_at) return
+    e.stopPropagation()
     timerRef.current = setTimeout(() => setShowDelete(true), 500)
   }
+
   const cancelPress = () => clearTimeout(timerRef.current)
 
-  const handleContextMenu = (e: React.MouseEvent | React.TouchEvent) => {
+  const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault()
+    e.stopPropagation()
     if (isOwn && !message.deleted_at) setShowDelete(true)
   }
 
@@ -40,7 +50,7 @@ export function MessageBubble({ message, isOwn, onDelete }: Props) {
       style={{ display: 'flex', justifyContent: isOwn ? 'flex-end' : 'flex-start', marginBottom: '0.25rem', position: 'relative' }}
       onMouseDown={startPress}
       onMouseUp={cancelPress}
-      onMouseLeave={() => { cancelPress(); setShowDelete(false) }}
+      onMouseLeave={() => { cancelPress() }}
       onTouchStart={startPress}
       onTouchEnd={cancelPress}
       onTouchMove={cancelPress}
@@ -48,16 +58,26 @@ export function MessageBubble({ message, isOwn, onDelete }: Props) {
     >
       {showDelete && (
         <button
+          onPointerDown={(e) => e.stopPropagation()}
           onClick={() => { onDelete(message.id); setShowDelete(false) }}
           style={{
-            position: 'absolute', top: '50%',
-            ...(isOwn ? { left: 0, transform: 'translate(-110%, -50%)' } : { right: 0, transform: 'translate(110%, -50%)' }),
-            background: '#ef4444', border: 'none', borderRadius: 6,
-            color: '#fff', fontSize: '0.75rem', padding: '0.3rem 0.6rem',
-            cursor: 'pointer', whiteSpace: 'nowrap', zIndex: 10,
+            position: 'absolute',
+            bottom: 'calc(100% + 6px)',
+            ...(isOwn ? { right: 0 } : { left: 0 }),
+            background: '#ef4444',
+            border: 'none',
+            borderRadius: 8,
+            color: '#fff',
+            fontSize: '0.8rem',
+            fontWeight: 600,
+            padding: '0.35rem 0.75rem',
+            cursor: 'pointer',
+            whiteSpace: 'nowrap',
+            zIndex: 20,
+            boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
           }}
         >
-          🗑 Elimina
+          Elimina
         </button>
       )}
 
