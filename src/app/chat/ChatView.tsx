@@ -31,7 +31,15 @@ export function ChatView({ userId }: { userId: string }) {
         ⎋
       </button>
 
-      <main style={{ flex: 1, overflowY: 'auto', padding: '1rem', paddingTop: 'max(2.5rem, env(safe-area-inset-top))' }}>
+      <main style={{
+        flex: 1, overflowY: 'auto', padding: '1rem',
+        paddingTop: 'max(2.5rem, env(safe-area-inset-top))',
+        backgroundImage: 'linear-gradient(rgba(15,15,15,0.55), rgba(15,15,15,0.55)), url(/bg.png)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+        backgroundAttachment: 'local',
+      }}>
         {loading && <p style={{ color: 'var(--text-muted)', textAlign: 'center' }}>...</p>}
         {messages.map((msg) => (
           <MessageBubble key={msg.id} message={msg} isOwn={msg.sender_id === userId} onDelete={deleteMessage} onEdit={editMessage} />
