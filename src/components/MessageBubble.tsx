@@ -2,6 +2,7 @@
 import Image from 'next/image'
 import { useRef, useState } from 'react'
 import type { Message } from '@/lib/types'
+import { VoicePlayer } from './VoicePlayer'
 
 interface Props {
   message: Message
@@ -72,9 +73,9 @@ export function MessageBubble({ message, isOwn, onDelete, onEdit }: Props) {
 
   const menuItems = [
     { label: 'Copia', icon: '📋', action: handleCopy, show: !!message.content },
-    { label: 'Modifica', icon: '✏️', action: handleEdit, show: isOwn && !!message.content && !message.photo_url },
+    { label: 'Modifica', icon: '✏️', action: handleEdit, show: isOwn && !!message.content && !message.photo_url && !message.voice_url },
     { label: 'Elimina', icon: '🗑', action: handleDelete, show: isOwn },
-    { label: 'Condividi', icon: '↗', action: handleShare, show: true },
+    { label: 'Condividi', icon: '↗', action: handleShare, show: !message.voice_url },
   ].filter(i => i.show)
 
   if (message.deleted_at) {
@@ -151,6 +152,9 @@ export function MessageBubble({ message, isOwn, onDelete, onEdit }: Props) {
       }}>
         {message.silent && (
           <span style={{ position: 'absolute', top: 4, right: 6, fontSize: '0.6rem', opacity: 0.6 }}>🔕</span>
+        )}
+        {message.voice_url && (
+          <VoicePlayer src={`${supabaseUrl}/storage/v1/object/public/voices/${message.voice_url}`} />
         )}
         {message.photo_url && (
           <Image
