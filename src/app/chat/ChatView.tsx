@@ -16,7 +16,7 @@ export function ChatView({ userId }: { userId: string }) {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh', userSelect: 'none', WebkitUserSelect: 'none' }}>
       <button
         onClick={handleLogout}
         title="Esci"
