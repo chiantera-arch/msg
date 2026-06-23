@@ -58,7 +58,8 @@ export function MessageInput({ userId }: { userId: string }) {
     }}>
       {!sending && (
         <>
-          <PhotoUploader onUploaded={setPhotoPath} disabled={sending} />
+          <PhotoUploader onUploaded={setPhotoPath} disabled={sending} capture icon="📸" label="Scatta foto" />
+          <PhotoUploader onUploaded={setPhotoPath} disabled={sending} icon="🖼️" label="Galleria" />
           <VoiceRecorder onRecorded={handleVoice} disabled={sending} />
         </>
       )}
