@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next'
+import { SwRegister } from '@/components/SwRegister'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -17,7 +18,10 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="it">
-      <body>{children}</body>
+      <body>
+        <SwRegister />
+        {children}
+      </body>
     </html>
   )
 }

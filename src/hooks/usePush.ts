@@ -7,9 +7,7 @@ export function usePush() {
 
   useEffect(() => {
     if (!('serviceWorker' in navigator)) return
-
-    navigator.serviceWorker
-      .register('/sw.js')
+    navigator.serviceWorker.ready
       .then((reg) => reg.pushManager.getSubscription())
       .then((sub) => setSubscribed(!!sub))
   }, [])
