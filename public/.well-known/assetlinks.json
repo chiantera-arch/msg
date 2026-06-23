@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "app.netlify.afmsg.twa",
+      "sha256_cert_fingerprints": [
+        "A2:A2:C7:47:2F:BD:1B:B1:B6:21:DD:71:A8:55:4C:FE:91:C6:D0:25:9A:95:E9:BF:92:F1:1F:09:FE:ED:FE:38"
+      ]
+    }
+  }
+]
