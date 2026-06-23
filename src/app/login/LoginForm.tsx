@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
+import { subscribeToPush } from '@/lib/push'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -20,6 +21,7 @@ export default function LoginPage() {
       setError(error.message ?? 'Errore di accesso')
       setLoading(false)
     } else {
+      await subscribeToPush().catch(() => {})
       router.push('/chat')
     }
   }
@@ -30,7 +32,7 @@ export default function LoginPage() {
       height: '100dvh', padding: '1rem',
     }}>
       <form onSubmit={handleLogin} style={{ width: '100%', maxWidth: 320, display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-<input
+        <input
           type="email"
           placeholder="Email"
           value={email}
@@ -64,6 +66,7 @@ const inputStyle: React.CSSProperties = {
   color: '#f0f0f0',
   fontSize: '1rem',
   outline: 'none',
+  width: '100%',
 }
 
 const buttonStyle: React.CSSProperties = {

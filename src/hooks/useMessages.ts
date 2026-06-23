@@ -37,6 +37,15 @@ export function useMessages() {
           }
         },
       )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'messages' },
+        (payload) => {
+          setMessages((prev) =>
+            prev.map((m) => m.id === payload.new.id ? { ...m, ...payload.new } as Message : m)
+          )
+        },
+      )
       .subscribe()
 
     return () => { supabase.removeChannel(channel) }
@@ -46,5 +55,12 @@ export function useMessages() {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  return { messages, loading, bottomRef }
+  const deleteMessage = async (id: string) => {
+    await supabase
+      .from('messages')
+      .update({ deleted_at: new Date().toISOString() })
+      .eq('id', id)
+  }
+
+  return { messages, loading, bottomRef, deleteMessage }
 }

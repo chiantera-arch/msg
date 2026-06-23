@@ -13,6 +13,7 @@ export interface Message {
   photo_url: string | null
   silent: boolean
   read_at: string | null
+  deleted_at: string | null
   created_at: string
   profiles?: Pick<Profile, 'id' | 'display_name'>
 }
